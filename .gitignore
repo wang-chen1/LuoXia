@@ -23,3 +23,5 @@ node_modules
 # 模型目录
 /models/
 ./models/*
+
+.venv
