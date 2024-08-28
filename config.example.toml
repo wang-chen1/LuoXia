@@ -17,7 +17,7 @@ redis_db = 0
 redis_password = ""
 max_concurrent_tasks = 5
 hide_config = false
-reload_debug=False
+reload_debug=false
 
 [video]
 video_source = "pexels"  # "pexels" or "pixabay"
