@@ -1,10 +1,11 @@
 from fastapi import Request
+
 from luoxia.app.controllers.v1.base import new_router
 from luoxia.app.models.schema import (
-    VideoScriptResponse,
     VideoScriptRequest,
-    VideoTermsResponse,
+    VideoScriptResponse,
     VideoTermsRequest,
+    VideoTermsResponse,
 )
 from luoxia.app.services import llm
 from luoxia.app.utils import utils

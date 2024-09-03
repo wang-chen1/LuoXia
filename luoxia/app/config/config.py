@@ -1,15 +1,16 @@
 import os
-import socket
-import toml
 import shutil
-from loguru import logger
+import socket
 from functools import lru_cache
+
+import toml
+from loguru import logger
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 config_file = f"{root_dir}/config.toml"
 
 
-class Configuration():
+class Configuration:
 
     def __init__(self):
         self._config = None
@@ -45,4 +46,3 @@ class Configuration():
         instance = cls()
         instance._config = config_dict
         return instance
-

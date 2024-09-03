@@ -245,10 +245,10 @@ class TaskQueryResponse(BaseResponse):
                     "state": 1,
                     "progress": 100,
                     "videos": [
-                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/final-1.mp4"
+                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/final-1.mp4",
                     ],
                     "combined_videos": [
-                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/combined-1.mp4"
+                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/combined-1.mp4",
                     ],
                 },
             },
@@ -265,10 +265,10 @@ class TaskDeletionResponse(BaseResponse):
                     "state": 1,
                     "progress": 100,
                     "videos": [
-                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/final-1.mp4"
+                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/final-1.mp4",
                     ],
                     "combined_videos": [
-                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/combined-1.mp4"
+                        "http://127.0.0.1:8080/tasks/6c85c8cc-a77a-42b9-bc30-947815aa0558/combined-1.mp4",
                     ],
                 },
             },
@@ -282,7 +282,7 @@ class VideoScriptResponse(BaseResponse):
                 "status": 200,
                 "message": "success",
                 "data": {
-                    "video_script": "春天的花海，是大自然的一幅美丽画卷。在这个季节里，大地复苏，万物生长，花朵争相绽放，形成了一片五彩斑斓的花海..."
+                    "video_script": "春天的花海，是大自然的一幅美丽画卷。在这个季节里，大地复苏，万物生长，花朵争相绽放，形成了一片五彩斑斓的花海...",
                 },
             },
         }
@@ -311,8 +311,8 @@ class BgmRetrieveResponse(BaseResponse):
                             "name": "output013.mp3",
                             "size": 1891269,
                             "file": "/MoneyPrinterTurbo/resource/songs/output013.mp3",
-                        }
-                    ]
+                        },
+                    ],
                 },
             },
         }

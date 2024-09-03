@@ -1,5 +1,6 @@
 import ast
 from abc import ABC, abstractmethod
+
 from luoxia.app.config import CONF
 from luoxia.app.models import const
 
@@ -114,9 +115,7 @@ _redis_db = CONF.redis.db
 _redis_password = CONF.redis.password
 
 state = (
-    RedisState(
-        host=_redis_host, port=_redis_port, db=_redis_db, password=_redis_password
-    )
+    RedisState(host=_redis_host, port=_redis_port, db=_redis_db, password=_redis_password)
     if _enable_redis
     else MemoryState()
 )

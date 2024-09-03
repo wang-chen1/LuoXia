@@ -1,16 +1,19 @@
+import json
 import logging
 import re
-import json
-import g4f
-from typing import List
-from loguru import logger
-from openai import OpenAI, OpenAIError, AzureOpenAI
-from openai.types.chat import ChatCompletion
 from abc import ABC, abstractmethod
+from typing import List
+
+import g4f
+from google import generativeai as genai
+from loguru import logger
+from openai import AzureOpenAI, OpenAI, OpenAIError
+from openai.types.chat import ChatCompletion
 
 from luoxia.app.config import CONF
 
 llm_generate_max_retries = CONF.default.llm_generate_max_retries
+
 
 class GetLLMProvide(ABC):
 
@@ -27,37 +30,32 @@ class GetLLMProvide(ABC):
 
 
 class QwenLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
         import dashscope
         from dashscope.api_entities.dashscope_response import GenerationResponse
 
         dashscope.api_key = self.api_key
         response = dashscope.Generation.call(
-            model=self.model_name, messages=[{"role": "user", "content": prompt}]
+            model=self.model_name, messages=[{"role": "user", "content": prompt}],
         )
         if response:
             if isinstance(response, GenerationResponse):
                 status_code = response.status_code
                 if status_code != 200:
-                    raise Exception(
-                        f'[qwen] returned an error response: "{response}"'
-                    )
+                    raise Exception(f'[qwen] returned an error response: "{response}"')
 
                 content = response["output"]["text"]
                 return content.replace("\n", "")
             else:
-                raise Exception(
-                    f'[qwen] returned an invalid response: "{response}"'
-                )
+                raise Exception(f'[qwen] returned an invalid response: "{response}"')
         else:
             raise Exception(f"[qwen] returned an empty response")
 
 
 class GeminiLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
-        import google.generativeai as genai
 
         genai.configure(api_key=self.api_key, transport="rest")
 
@@ -104,7 +102,7 @@ class GeminiLLM(GetLLMProvide):
 
 
 class CloudflareLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
         import requests
 
@@ -115,7 +113,7 @@ class CloudflareLLM(GetLLMProvide):
                 "messages": [
                     {"role": "system", "content": "You are a friendly assistant"},
                     {"role": "user", "content": prompt},
-                ]
+                ],
             },
         )
         result = response.json()
@@ -124,7 +122,7 @@ class CloudflareLLM(GetLLMProvide):
 
 
 class ErnieLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
         import requests
 
@@ -149,18 +147,16 @@ class ErnieLLM(GetLLMProvide):
                 "disable_search": False,
                 "enable_citation": False,
                 "response_format": "text",
-            }
+            },
         )
         headers = {"Content-Type": "application/json"}
 
-        response = requests.request(
-            "POST", url, headers=headers, data=payload
-        ).json()
+        response = requests.request("POST", url, headers=headers, data=payload).json()
         return response.get("result")
 
 
 class AzureLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
         client = AzureOpenAI(
             api_key=self.api_key,
@@ -168,7 +164,7 @@ class AzureLLM(GetLLMProvide):
             azure_endpoint=self.base_url,
         )
         response = client.chat.completions.create(
-            model=self.model_name, messages=[{"role": "user", "content": prompt}]
+            model=self.model_name, messages=[{"role": "user", "content": prompt}],
         )
         if response:
             if isinstance(response, ChatCompletion):
@@ -176,18 +172,18 @@ class AzureLLM(GetLLMProvide):
             else:
                 raise Exception(
                     f'[{CONF.default.llm_provider}] returned an invalid response: "{response}", please check your network '
-                    f"connection and try again."
+                    f"connection and try again.",
                 )
         else:
             raise Exception(
-                f"[{CONF.default.llm_provider}] returned an empty response, please check your network connection and try again."
+                f"[{CONF.default.llm_provider}] returned an empty response, please check your network connection and try again.",
             )
 
         return content.replace("\n", "")
 
 
 class OtherLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
         client = OpenAI(
             api_key=self.api_key,
@@ -195,7 +191,7 @@ class OtherLLM(GetLLMProvide):
         )
         try:
             response = client.chat.completions.create(
-                model=self.model_name, messages=[{"role": "user", "content": prompt}]
+                model=self.model_name, messages=[{"role": "user", "content": prompt}],
             )
         except OpenAIError as e:
             raise Exception(f"{CONF.default.llm_provider} config error, please check it")
@@ -207,19 +203,19 @@ class OtherLLM(GetLLMProvide):
             else:
                 raise Exception(
                     f"[{CONF.default.llm_provider}] returned an invalid response: '{response}', "
-                    "please check your network connection and try again."
+                    "please check your network connection and try again.",
                 )
         else:
             raise Exception(
                 f"[{CONF.default.llm_provider}] returned an empty response, please check"
-                "your network connection and try again."
+                "your network connection and try again.",
             )
 
         return content.replace("\n", "")
 
 
 class G4gLLM(GetLLMProvide):
-    
+
     def get_contant(self, prompt):
 
         content = g4f.ChatCompletion.create(
@@ -230,7 +226,7 @@ class G4gLLM(GetLLMProvide):
         return content.replace("\n", "")
 
 
-def select_llm_provider(llm_provider) -> GetLLMProvide:
+def select_llm_provider(llm_provider: str) -> GetLLMProvide:
     match llm_provider:
         case "qwen":
             return QwenLLM()
@@ -271,9 +267,7 @@ Generate a script for a video, depending on the subject of the video.
 """.strip()
 
 
-def generate_script(
-    video_subject: str, language: str = "", paragraph_number: int = 1
-) -> str:
+def generate_script(video_subject: str, language: str = "", paragraph_number: int = 1) -> str:
     logger.info(f"llm provider type {CONF.default.llm_provider}")
     prompt = prompt_script(video_subject, paragraph_number)
     if language:
@@ -402,4 +396,10 @@ if __name__ == "__main__":
     # )
     # print("######################")
     # print(search_terms)
-    search_terms = ['meaning of life', 'life purpose', 'personal growth', 'happiness journey', 'self-discovery']
+    search_terms = [
+        "meaning of life",
+        "life purpose",
+        "personal growth",
+        "happiness journey",
+        "self-discovery",
+    ]

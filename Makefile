@@ -1,4 +1,7 @@
 PYTHON ?= python3
+SOURCES := luoxia
+# TESTS := tests
+# TOOLS := tools
 ROOT_DIR ?= $(shell git rev-parse --show-toplevel)
 
 # Color
@@ -34,7 +37,7 @@ help:
 	@echo
 
 
-.PHONY: git_config
+.PHONY: git_config clean lint fmt build devbuild init_venv use_venv install_dependence run_api run_streamlit
 user_name = $(shell git config --get user.name)
 user_email = $(shell git config --get user.email)
 commit_template = $(shell git config --get commit.template)
@@ -58,12 +61,25 @@ endif
 	@printf "${yellow}You may need to run 'pip install git-review' install git review tools.\n\n${no_color}"
 
 
-.PHONY: clean
 clean:
 	rm -rf .venv dist htmlcov .coverage log test_results.html build .tox skyline_apiserver.egg-info AUTHORS ChangeLog storage
 
+lint:
+	# poetry run mypy --no-incremental $(SOURCES)
+	# poetry run isort --check-only --diff $(SOURCES) $(TESTS) $(TOOLS)
+	# poetry run black --check --diff --color $(SOURCES) $(TESTS) $(TOOLS)
+	# poetry run flake8 $(SOURCES) $(TESTS) $(TOOLS)
+	poetry run isort --check-only --diff $(SOURCES)
+	poetry run black --check --diff --color $(SOURCES)
+	poetry run flake8 $(SOURCES)
 
-.PHONY: build devbuild
+fmt:
+	# poetry run isort $(SOURCES) $(TESTS) $(TOOLS)
+	# poetry run black $(SOURCES) $(TESTS) $(TOOLS)
+	# poetry run add-trailing-comma --py36-plus --exit-zero-even-if-changed `find $(SOURCES) -name '*.py'`
+	poetry run isort $(SOURCES)
+	poetry run black $(SOURCES)
+	poetry run add-trailing-comma --py36-plus --exit-zero-even-if-changed `find $(SOURCES) -name '*.py'`
 BUILD_ENGINE ?= docker
 BUILD_CONTEXT ?= .
 DOCKER_FILE ?= container/Dockerfile
@@ -92,19 +108,18 @@ devbuild: skyline_console/skyline_console.tar.gz skyline_console/commit_id
 	  $(BUILD_ARGS) -f $(DOCKER_FILE) -t $(IMAGE):$(IMAGE_TAG) $(BUILD_CONTEXT)
 
 
-.PHONY: init_venv
 init_venv:
 	python -m venv .venv
 
-.PHONY: install_dependence
+init_venv:
+	poetry env use .venv/bin/python
+
 install_dependence:
 	pip install -r requirements.txt
 
-.PHONY: run_api
 run_api:
 	python main.python
 
-.PHONY: run_streamlit
 run_streamlit: 
-	streamlit run $(ROOT_DIR)/webui/main.py --browser.serverAddress="0.0.0.0"\
+	streamlit run $(ROOT_DIR)/luoxia/webui/main.py --browser.serverAddress="0.0.0.0" \
 	--server.enableCORS=True --browser.gatherUsageStats=False

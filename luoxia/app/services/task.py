@@ -3,14 +3,12 @@ import os.path
 import re
 from os import path
 
-from edge_tts import SubMaker
 from loguru import logger
 
 from luoxia.app.config import CONF
 from luoxia.app.models import const
 from luoxia.app.models.schema import VideoConcatMode, VideoParams
-from luoxia.app.services import llm, material, subtitle, video, voice
-from luoxia.app.services import state as sm
+from luoxia.app.services import llm, material, state as sm, subtitle, video, voice
 from luoxia.app.utils import utils
 
 
@@ -39,7 +37,7 @@ def generate_terms(task_id, params, video_script):
     video_terms = params.video_terms
     if not video_terms:
         video_terms = llm.generate_terms(
-            video_subject=params.video_subject, video_script=video_script, amount=5
+            video_subject=params.video_subject, video_script=video_script, amount=5,
         )
     else:
         if isinstance(video_terms, str):
@@ -86,7 +84,7 @@ def generate_audio(task_id, params, video_script):
             """failed to generate audio:
 1. check if the language of the voice matches the language of the video script.
 2. check if the network is available. If you are in China, it is recommended to use a VPN and enable the global traffic mode.
-        """.strip()
+        """.strip(),
         )
         return None, None, None
 
@@ -104,9 +102,7 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
     subtitle_fallback = False
     if subtitle_provider == "edge":
-        voice.create_subtitle(
-            text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
-        )
+        voice.create_subtitle(text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path)
         if not os.path.exists(subtitle_path):
             subtitle_fallback = True
             logger.warning("subtitle file not found, fallback to whisper")
@@ -128,13 +124,11 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         materials = video.preprocess_video(
-            materials=params.video_materials, clip_duration=params.video_clip_duration
+            materials=params.video_materials, clip_duration=params.video_clip_duration,
         )
         if not materials:
             sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
-            logger.error(
-                "no valid materials found, please check the materials and try again."
-            )
+            logger.error("no valid materials found, please check the materials and try again.")
             return None
         return [material_info.url for material_info in materials]
     else:
@@ -151,15 +145,13 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
         if not downloaded_videos:
             sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
             logger.error(
-                "failed to download videos, maybe the network is not available. if you are in China, please use a VPN."
+                "failed to download videos, maybe the network is not available. if you are in China, please use a VPN.",
             )
             return None
         return downloaded_videos
 
 
-def generate_final_videos(
-        task_id, params, downloaded_videos, audio_file, subtitle_path
-):
+def generate_final_videos(task_id, params, downloaded_videos, audio_file, subtitle_path):
     final_video_paths = []
     combined_video_paths = []
     video_concat_mode = (
@@ -169,9 +161,7 @@ def generate_final_videos(
     _progress = 50
     for i in range(params.video_count):
         index = i + 1
-        combined_video_path = path.join(
-            utils.task_dir(task_id), f"combined-{index}.mp4"
-        )
+        combined_video_path = path.join(utils.task_dir(task_id), f"combined-{index}.mp4")
         logger.info(f"\n\n## combining video: {index} => {combined_video_path}")
         video.combine_videos(
             combined_video_path=combined_video_path,
@@ -212,7 +202,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if type(params.video_concat_mode) is str:
         params.video_concat_mode = VideoConcatMode(params.video_concat_mode)
-        
+
     # 1. Generate script
     video_script = generate_script(task_id, params)
     if not video_script:
@@ -223,7 +213,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if stop_at == "script":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, script=video_script
+            task_id, state=const.TASK_STATE_COMPLETE, progress=100, script=video_script,
         )
         return {"script": video_script}
 
@@ -239,7 +229,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if stop_at == "terms":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, terms=video_terms
+            task_id, state=const.TASK_STATE_COMPLETE, progress=100, terms=video_terms,
         )
         return {"script": video_script, "terms": video_terms}
 
@@ -277,9 +267,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=40)
 
     # 5. Get video materials
-    downloaded_videos = get_video_materials(
-        task_id, params, video_terms, audio_duration
-    )
+    downloaded_videos = get_video_materials(task_id, params, video_terms, audio_duration)
     if not downloaded_videos:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         return
@@ -297,16 +285,14 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     # 6. Generate final videos
     final_video_paths, combined_video_paths = generate_final_videos(
-        task_id, params, downloaded_videos, audio_file, subtitle_path
+        task_id, params, downloaded_videos, audio_file, subtitle_path,
     )
 
     if not final_video_paths:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         return
 
-    logger.success(
-        f"task {task_id} finished, generated {len(final_video_paths)} videos."
-    )
+    logger.success(f"task {task_id} finished, generated {len(final_video_paths)} videos.")
 
     kwargs = {
         "videos": final_video_paths,
@@ -318,9 +304,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
         "subtitle_path": subtitle_path,
         "materials": downloaded_videos,
     }
-    sm.state.update_task(
-        task_id, state=const.TASK_STATE_COMPLETE, progress=100, **kwargs
-    )
+    sm.state.update_task(task_id, state=const.TASK_STATE_COMPLETE, progress=100, **kwargs)
     return kwargs
 
 
@@ -330,6 +314,5 @@ if __name__ == "__main__":
         video_subject="金钱的作用",
         voice_name="zh-CN-XiaoyiNeural-Female",
         voice_rate=1.0,
-
     )
     start(task_id, params, stop_at="video")

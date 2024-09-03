@@ -1,9 +1,9 @@
 import json
 import os.path
 import re
+from timeit import default_timer as timer
 
 from faster_whisper import WhisperModel
-from timeit import default_timer as timer
 from loguru import logger
 
 from luoxia.app.config import CONF
@@ -24,11 +24,11 @@ def create(audio_file, subtitle_file: str = ""):
             model_path = model_size
 
         logger.info(
-            f"loading model: {model_path}, device: {device}, compute_type: {compute_type}"
+            f"loading model: {model_path}, device: {device}, compute_type: {compute_type}",
         )
         try:
             model = WhisperModel(
-                model_size_or_path=model_path, device=device, compute_type=compute_type
+                model_size_or_path=model_path, device=device, compute_type=compute_type,
             )
         except Exception as e:
             logger.error(
@@ -37,7 +37,7 @@ def create(audio_file, subtitle_file: str = ""):
                 f"this may be caused by network issue. \n"
                 f"please download the model manually and put it in the 'models' folder. \n"
                 f"see [README.md FAQ](https://github.com/harry0703/MoneyPrinterTurbo) for more details.\n"
-                f"********************************************\n\n"
+                f"********************************************\n\n",
             )
             return None
 
@@ -54,7 +54,7 @@ def create(audio_file, subtitle_file: str = ""):
     )
 
     logger.info(
-        f"detected language: '{info.language}', probability: {info.language_probability:.2f}"
+        f"detected language: '{info.language}', probability: {info.language_probability:.2f}",
     )
 
     start = timer()
@@ -68,9 +68,7 @@ def create(audio_file, subtitle_file: str = ""):
         msg = "[%.2fs -> %.2fs] %s" % (seg_start, seg_end, seg_text)
         logger.debug(msg)
 
-        subtitles.append(
-            {"msg": seg_text, "start_time": seg_start, "end_time": seg_end}
-        )
+        subtitles.append({"msg": seg_text, "start_time": seg_start, "end_time": seg_end})
 
     for segment in segments:
         words_idx = 0
@@ -124,9 +122,7 @@ def create(audio_file, subtitle_file: str = ""):
         text = subtitle.get("msg")
         if text:
             lines.append(
-                utils.text_to_srt(
-                    idx, text, subtitle.get("start_time"), subtitle.get("end_time")
-                )
+                utils.text_to_srt(idx, text, subtitle.get("start_time"), subtitle.get("end_time")),
             )
             idx += 1
 
@@ -209,9 +205,9 @@ def correct(subtitle_file, video_script):
 
             while next_subtitle_index < len(subtitle_items):
                 next_subtitle = subtitle_items[next_subtitle_index][2].strip()
-                if similarity(
-                    script_line, combined_subtitle + " " + next_subtitle
-                ) > similarity(script_line, combined_subtitle):
+                if similarity(script_line, combined_subtitle + " " + next_subtitle) > similarity(
+                    script_line, combined_subtitle,
+                ):
                     combined_subtitle += " " + next_subtitle
                     end_time = subtitle_items[next_subtitle_index][1].split(" --> ")[1]
                     next_subtitle_index += 1
@@ -220,26 +216,24 @@ def correct(subtitle_file, video_script):
 
             if similarity(script_line, combined_subtitle) > 0.8:
                 logger.warning(
-                    f"Merged/Corrected - Script: {script_line}, Subtitle: {combined_subtitle}"
+                    f"Merged/Corrected - Script: {script_line}, Subtitle: {combined_subtitle}",
                 )
                 new_subtitle_items.append(
                     (
                         len(new_subtitle_items) + 1,
                         f"{start_time} --> {end_time}",
                         script_line,
-                    )
+                    ),
                 )
                 corrected = True
             else:
-                logger.warning(
-                    f"Mismatch - Script: {script_line}, Subtitle: {combined_subtitle}"
-                )
+                logger.warning(f"Mismatch - Script: {script_line}, Subtitle: {combined_subtitle}")
                 new_subtitle_items.append(
                     (
                         len(new_subtitle_items) + 1,
                         f"{start_time} --> {end_time}",
                         script_line,
-                    )
+                    ),
                 )
                 corrected = True
 
@@ -255,7 +249,7 @@ def correct(subtitle_file, video_script):
                     len(new_subtitle_items) + 1,
                     subtitle_items[subtitle_index][1],
                     script_lines[script_index],
-                )
+                ),
             )
             subtitle_index += 1
         else:
@@ -264,7 +258,7 @@ def correct(subtitle_file, video_script):
                     len(new_subtitle_items) + 1,
                     "00:00:00,000 --> 00:00:00,000",
                     script_lines[script_index],
-                )
+                ),
             )
         script_index += 1
         corrected = True

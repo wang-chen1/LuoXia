@@ -33,7 +33,41 @@ opencv-python = ">=4.9.0.80,<4.10.0.0"
 azure-cognitiveservices-speech = ">=1.37.0,<1.38.0"
 git-changelog = ">=2.5.2,<2.6.0"
 g4f = "0.3.0.10"
+black = "^24.8.0"
+isort = "^5.13.2"
+add-trailing-comma = "^3.1.0"
 
+[tool.black]
+line-length = 98
+target-version = ['py310']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | exclude.py
+)
+'''
+verbose = true
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 98
+reverse_relative = true
+combine_as_imports = true
 
 [build-system]
 requires = ["poetry-core"]

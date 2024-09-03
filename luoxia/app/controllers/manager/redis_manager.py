@@ -24,12 +24,8 @@ class RedisTaskManager(TaskManager):
     def enqueue(self, task: Dict):
         task_with_serializable_params = task.copy()
 
-        if "params" in task["kwargs"] and isinstance(
-            task["kwargs"]["params"], VideoParams
-        ):
-            task_with_serializable_params["kwargs"]["params"] = task["kwargs"][
-                "params"
-            ].dict()
+        if "params" in task["kwargs"] and isinstance(task["kwargs"]["params"], VideoParams):
+            task_with_serializable_params["kwargs"]["params"] = task["kwargs"]["params"].dict()
 
         # 将函数对象转换为其名称
         task_with_serializable_params["func"] = task["func"].__name__
@@ -43,11 +39,9 @@ class RedisTaskManager(TaskManager):
             task_info["func"] = FUNC_MAP[task_info["func"]]
 
             if "params" in task_info["kwargs"] and isinstance(
-                task_info["kwargs"]["params"], dict
+                task_info["kwargs"]["params"], dict,
             ):
-                task_info["kwargs"]["params"] = VideoParams(
-                    **task_info["kwargs"]["params"]
-                )
+                task_info["kwargs"]["params"] = VideoParams(**task_info["kwargs"]["params"])
 
             return task_info
         return None

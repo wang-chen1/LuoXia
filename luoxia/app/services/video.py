@@ -104,18 +104,16 @@ def combine_videos(
                     new_height = int(clip_h * scale_factor)
                     clip_resized = clip.resize(newsize=(new_width, new_height))
 
-                    background = ColorClip(
-                        size=(video_width, video_height), color=(0, 0, 0)
-                    )
+                    background = ColorClip(size=(video_width, video_height), color=(0, 0, 0))
                     clip = CompositeVideoClip(
                         [
                             background.set_duration(clip.duration),
                             clip_resized.set_position("center"),
-                        ]
+                        ],
                     )
 
                 logger.info(
-                    f"resizing video to {video_width} x {video_height}, clip size: {clip_w} x {clip_h}"
+                    f"resizing video to {video_width} x {video_height}, clip size: {clip_w} x {clip_h}",
                 )
 
             if clip.duration > max_clip_duration:
@@ -234,7 +232,7 @@ def generate_video(
         phrase = subtitle_item[1]
         max_width = video_width * 0.9
         wrapped_txt, txt_height = wrap_text(
-            phrase, max_width=max_width, font=font_path, fontsize=params.font_size
+            phrase, max_width=max_width, font=font_path, fontsize=params.font_size,
         )
         _clip = TextClip(
             wrapped_txt,
@@ -280,9 +278,7 @@ def generate_video(
     bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
     if bgm_file:
         try:
-            bgm_clip = (
-                AudioFileClip(bgm_file).volumex(params.bgm_volume).audio_fadeout(3)
-            )
+            bgm_clip = AudioFileClip(bgm_file).volumex(params.bgm_volume).audio_fadeout(3)
             bgm_clip = afx.audio_loop(bgm_clip, duration=video_clip.duration)
             audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
         except Exception as e:
@@ -322,18 +318,12 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
         if ext in const.FILE_TYPE_IMAGES:
             logger.info(f"processing image: {material.url}")
             # 创建一个图片剪辑，并设置持续时间为3秒钟
-            clip = (
-                ImageClip(material.url)
-                .set_duration(clip_duration)
-                .set_position("center")
-            )
+            clip = ImageClip(material.url).set_duration(clip_duration).set_position("center")
             # 使用resize方法来添加缩放效果。这里使用了lambda函数来使得缩放效果随时间变化。
             # 假设我们想要从原始大小逐渐放大到120%的大小。
             # t代表当前时间，clip.duration为视频总时长，这里是3秒。
             # 注意：1 表示100%的大小，所以1.2表示120%的大小
-            zoom_clip = clip.resize(
-                lambda t: 1 + (clip_duration * 0.03) * (t / clip.duration)
-            )
+            zoom_clip = clip.resize(lambda t: 1 + (clip_duration * 0.03) * (t / clip.duration))
 
             # 如果需要，可以创建一个包含缩放剪辑的复合视频剪辑
             # （这在您想要在视频中添加其他元素时非常有用）

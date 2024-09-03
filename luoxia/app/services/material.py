@@ -1,14 +1,14 @@
 import os
 import random
+from typing import List
 from urllib.parse import urlencode
 
 import requests
-from typing import List
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from luoxia.app.config import CONF
-from luoxia.app.models.schema import VideoAspect, VideoConcatMode, MaterialInfo
+from luoxia.app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
 from luoxia.app.utils import utils
 
 requested_count = 0
@@ -133,11 +133,9 @@ def search_videos_pixabay(
     #                 break
     #     return video_items
     # except Exception as e:
-        # logger.error(f"search videos failed: {str(e)}")
+    # logger.error(f"search videos failed: {str(e)}")
 
-    res = requests.get(
-        query_url, proxies=CONF.proxy.https, verify=False, timeout=(30, 60)
-    )
+    res = requests.get(query_url, proxies=CONF.proxy.https, verify=False, timeout=(30, 60))
     if res.status_code != 200:
         raise Exception(res.content)
     response = res.json()
@@ -168,7 +166,6 @@ def search_videos_pixabay(
     return video_items
 
 
-
 def save_video(video_url: str, save_dir: str = "") -> str:
     if not save_dir:
         save_dir = utils.storage_dir("cache_videos")
@@ -190,8 +187,8 @@ def save_video(video_url: str, save_dir: str = "") -> str:
     with open(video_path, "wb") as f:
         f.write(
             requests.get(
-                video_url, proxies=CONF.proxy.https, verify=False, timeout=(60, 240)
-            ).content
+                video_url, proxies=CONF.proxy.https, verify=False, timeout=(60, 240),
+            ).content,
         )
 
     if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
@@ -242,7 +239,7 @@ def download_videos(
                 found_duration += item.duration
 
     logger.info(
-        f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds"
+        f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds",
     )
     video_paths = []
 
@@ -259,9 +256,7 @@ def download_videos(
     for item in valid_video_items:
         try:
             logger.info(f"downloading video: {item.url}")
-            saved_video_path = save_video(
-                video_url=item.url, save_dir=material_directory
-            )
+            saved_video_path = save_video(video_url=item.url, save_dir=material_directory)
             if saved_video_path:
                 logger.info(f"video saved: {saved_video_path}")
                 video_paths.append(saved_video_path)
@@ -269,7 +264,7 @@ def download_videos(
                 total_duration += seconds
                 if total_duration > audio_duration:
                     logger.info(
-                        f"total duration of downloaded videos: {total_duration} seconds, skip downloading more"
+                        f"total duration of downloaded videos: {total_duration} seconds, skip downloading more",
                     )
                     break
         except Exception as e:
@@ -279,6 +274,4 @@ def download_videos(
 
 
 if __name__ == "__main__":
-    download_videos(
-        "test123", ["Money Exchange Medium"], audio_duration=100, source="pixabay"
-    )
+    download_videos("test123", ["Money Exchange Medium"], audio_duration=100, source="pixabay")

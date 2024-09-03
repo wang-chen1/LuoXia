@@ -1,6 +1,13 @@
 import os
 import sys
 
+from luoxia.app import __version__
+from luoxia.app.config import CONF
+from luoxia.app.models.const import FILE_TYPE_IMAGES, FILE_TYPE_VIDEOS
+from luoxia.app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode, VideoParams
+from luoxia.app.services import llm, task as tm, voice
+from luoxia.app.utils import utils
+
 # Add the root directory of the project to the system path to allow importing modules from the project
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if root_dir not in sys.path:
@@ -17,25 +24,19 @@ import streamlit as st
 from loguru import logger
 
 st.set_page_config(
-    page_title="MoneyPrinterTurbo",
+    page_title="luoxia",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="auto",
     menu_items={},
 )
 
-from luoxia.app.config.config import Config as CONF
-from luoxia.app.models.const import FILE_TYPE_IMAGES, FILE_TYPE_VIDEOS
-from luoxia.app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode, VideoParams
-from luoxia.app.services import llm, voice
-from luoxia.app.services import task as tm
-from luoxia.app.utils import utils
 
 hide_streamlit_style = """
 <style>#root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}</style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-st.title(f"MoneyPrinterTurbo v{CONF.get('project_version')}")
+st.title(f"luoxia {__version__}")
 
 support_locales = [
     "zh-CN",
@@ -62,7 +63,7 @@ if "video_script" not in st.session_state:
 if "video_terms" not in st.session_state:
     st.session_state["video_terms"] = ""
 if "ui_language" not in st.session_state:
-    st.session_state["ui_language"] = CONF.get("ui").get("language", system_locale)
+    st.session_state["ui_language"] = utils.get_system_locale()
 
 
 def get_all_fonts():
@@ -158,9 +159,9 @@ def tr(key):
 
 st.write(tr("Get Help"))
 
-llm_provider = config.app.get("llm_provider", "").lower()
+llm_provider = CONF.default.llm_provider
 
-if not config.app.get("hide_config", False):
+if not CONF.default.hide_config:
     with st.expander(tr("Basic Settings"), expanded=False):
         config_panels = st.columns(3)
         left_config_panel = config_panels[0]
@@ -175,18 +176,15 @@ if not config.app.get("hide_config", False):
                     selected_index = i
 
             selected_language = st.selectbox(
-                tr("Language"), options=display_languages, index=selected_index
+                tr("Language"), options=display_languages, index=selected_index,
             )
             if selected_language:
                 code = selected_language.split(" - ")[0].strip()
                 st.session_state["ui_language"] = code
-                config.ui["language"] = code
 
             # 是否禁用日志显示
-            hide_log = st.checkbox(
-                tr("Hide Log"), value=config.app.get("hide_log", False)
-            )
-            config.ui["hide_log"] = hide_log
+            hide_log = st.checkbox(tr("Hide Log"), value=CONF.default.hide_log)
+            CONF.default.hide_log = hide_log
 
         with middle_config_panel:
             #   openai
@@ -210,7 +208,7 @@ if not config.app.get("hide_config", False):
                 "Cloudflare",
                 "ERNIE",
             ]
-            saved_llm_provider = config.app.get("llm_provider", "OpenAI").lower()
+            saved_llm_provider = CONF.default.llm_provider
             saved_llm_provider_index = 0
             for i, provider in enumerate(llm_providers):
                 if provider.lower() == saved_llm_provider:
@@ -224,15 +222,13 @@ if not config.app.get("hide_config", False):
             )
             llm_helper = st.container()
             llm_provider = llm_provider.lower()
-            config.app["llm_provider"] = llm_provider
+            CONF.default.llm_provider = llm_provider
 
-            llm_api_key = config.app.get(f"{llm_provider}_api_key", "")
-            llm_secret_key = config.app.get(
-                f"{llm_provider}_secret_key", ""
-            )  # only for baidu ernie
-            llm_base_url = config.app.get(f"{llm_provider}_base_url", "")
-            llm_model_name = config.app.get(f"{llm_provider}_model_name", "")
-            llm_account_id = config.app.get(f"{llm_provider}_account_id", "")
+            llm_api_key = CONF.default.api_key
+            llm_secret_key = CONF.default.secret_key
+            llm_base_url = CONF.default.base_url
+            llm_model_name = CONF.default.model_name
+            llm_account_id = CONF.default.account_id
 
             tips = ""
             if llm_provider == "ollama":
@@ -275,9 +271,7 @@ if not config.app.get("hide_config", False):
                            """
             if llm_provider == "oneapi":
                 if not llm_model_name:
-                    llm_model_name = (
-                        "claude-3-5-sonnet-20240620"  # 默认模型，可以根据需要调整
-                    )
+                    llm_model_name = "claude-3-5-sonnet-20240620"  # 默认模型，可以根据需要调整
                 with llm_helper:
                     tips = """
                         ##### OneAPI 配置说明
@@ -353,15 +347,13 @@ if not config.app.get("hide_config", False):
                            - **Base Url**: 填写 **请求地址** [点击查看文档](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/jlil56u11#%E8%AF%B7%E6%B1%82%E8%AF%B4%E6%98%8E)
                            """
 
-            if tips and config.ui["language"] == "zh":
+            if tips and CONF.ui.language == "zh":
                 st.warning(
-                    "中国用户建议使用 **DeepSeek** 或 **Moonshot** 作为大模型提供商\n- 国内可直接访问，不需要VPN \n- 注册就送额度，基本够用"
+                    "中国用户建议使用 **DeepSeek** 或 **Moonshot** 作为大模型提供商\n- 国内可直接访问，不需要VPN \n- 注册就送额度，基本够用",
                 )
                 st.info(tips)
 
-            st_llm_api_key = st.text_input(
-                tr("API Key"), value=llm_api_key, type="password"
-            )
+            st_llm_api_key = st.text_input(tr("API Key"), value=llm_api_key, type="password")
             st_llm_base_url = st.text_input(tr("Base Url"), value=llm_base_url)
             st_llm_model_name = ""
             if llm_provider != "ernie":
@@ -371,54 +363,52 @@ if not config.app.get("hide_config", False):
                     key=f"{llm_provider}_model_name_input",
                 )
                 if st_llm_model_name:
-                    config.app[f"{llm_provider}_model_name"] = st_llm_model_name
+                    CONF.default.model_name = st_llm_model_name
             else:
                 st_llm_model_name = None
 
             if st_llm_api_key:
-                config.app[f"{llm_provider}_api_key"] = st_llm_api_key
+                CONF.default.api_key = st_llm_api_key
             if st_llm_base_url:
-                config.app[f"{llm_provider}_base_url"] = st_llm_base_url
+                CONF.default.base_url = st_llm_base_url
             if st_llm_model_name:
-                config.app[f"{llm_provider}_model_name"] = st_llm_model_name
+                CONF.default.model_name = st_llm_model_name
             if llm_provider == "ernie":
                 st_llm_secret_key = st.text_input(
-                    tr("Secret Key"), value=llm_secret_key, type="password"
+                    tr("Secret Key"), value=llm_secret_key, type="password",
                 )
-                config.app[f"{llm_provider}_secret_key"] = st_llm_secret_key
+                CONF.default.secret_key = st_llm_secret_key
 
             if llm_provider == "cloudflare":
-                st_llm_account_id = st.text_input(
-                    tr("Account ID"), value=llm_account_id
-                )
+                st_llm_account_id = st.text_input(tr("Account ID"), value=llm_account_id)
                 if st_llm_account_id:
-                    config.app[f"{llm_provider}_account_id"] = st_llm_account_id
+                    CONF.default.account_id = st_llm_account_id
 
         with right_config_panel:
 
-            def get_keys_from_config(cfg_key):
-                api_keys = config.app.get(cfg_key, [])
-                if isinstance(api_keys, str):
-                    api_keys = [api_keys]
-                api_key = ", ".join(api_keys)
-                return api_key
+            # def get_keys_from_config(cfg_key):
+            #     api_keys = config.app.get(cfg_key, [])
+            #     if isinstance(api_keys, str):
+            #         api_keys = [api_keys]
+            #     api_key = ", ".join(api_keys)
+            #     return api_key
 
-            def save_keys_to_config(cfg_key, value):
-                value = value.replace(" ", "")
-                if value:
-                    config.app[cfg_key] = value.split(",")
+            # def save_keys_to_config(cfg_key, value):
+            #     value = value.replace(" ", "")
+            #     if value:
+            #         config.app[cfg_key] = value.split(",")
 
-            pexels_api_key = get_keys_from_config("pexels_api_keys")
+            pexels_api_key = CONF.video.api_keys
             pexels_api_key = st.text_input(
-                tr("Pexels API Key"), value=pexels_api_key, type="password"
+                tr("Pexels API Key"), value=pexels_api_key, type="password",
             )
-            save_keys_to_config("pexels_api_keys", pexels_api_key)
+            # save_keys_to_config("pexels_api_keys", pexels_api_key)
 
-            pixabay_api_key = get_keys_from_config("pixabay_api_keys")
+            pixabay_api_key = CONF.video.api_keys
             pixabay_api_key = st.text_input(
-                tr("Pixabay API Key"), value=pixabay_api_key, type="password"
+                tr("Pixabay API Key"), value=pixabay_api_key, type="password",
             )
-            save_keys_to_config("pixabay_api_keys", pixabay_api_key)
+            # save_keys_to_config("pixabay_api_keys", pixabay_api_key)
 
 panel = st.columns(3)
 left_panel = panel[0]
@@ -432,7 +422,7 @@ with left_panel:
     with st.container(border=True):
         st.write(tr("Video Script Settings"))
         params.video_subject = st.text_input(
-            tr("Video Subject"), value=st.session_state["video_subject"]
+            tr("Video Subject"), value=st.session_state["video_subject"],
         ).strip()
 
         video_languages = [
@@ -449,19 +439,17 @@ with left_panel:
         )
         params.video_language = video_languages[selected_index][1]
 
-        if st.button(
-            tr("Generate Video Script and Keywords"), key="auto_generate_script"
-        ):
+        if st.button(tr("Generate Video Script and Keywords"), key="auto_generate_script"):
             with st.spinner(tr("Generating Video Script and Keywords")):
                 script = llm.generate_script(
-                    video_subject=params.video_subject, language=params.video_language
+                    video_subject=params.video_subject, language=params.video_language,
                 )
                 terms = llm.generate_terms(params.video_subject, script)
                 st.session_state["video_script"] = script
                 st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_script = st.text_area(
-            tr("Video Script"), value=st.session_state["video_script"], height=280
+            tr("Video Script"), value=st.session_state["video_script"], height=280,
         )
         if st.button(tr("Generate Video Keywords"), key="auto_generate_terms"):
             if not params.video_script:
@@ -473,7 +461,7 @@ with left_panel:
                 st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_terms = st.text_area(
-            tr("Video Keywords"), value=st.session_state["video_terms"], height=50
+            tr("Video Keywords"), value=st.session_state["video_terms"], height=50,
         )
 
 with middle_panel:
@@ -492,10 +480,8 @@ with middle_panel:
             (tr("Xiaohongshu"), "xiaohongshu"),
         ]
 
-        saved_video_source_name = config.app.get("video_source", "pexels")
-        saved_video_source_index = [v[1] for v in video_sources].index(
-            saved_video_source_name
-        )
+        saved_video_source_name = CONF.video.video_source
+        saved_video_source_index = [v[1] for v in video_sources].index(saved_video_source_name)
 
         selected_index = st.selectbox(
             tr("Video Source"),
@@ -504,7 +490,7 @@ with middle_panel:
             index=saved_video_source_index,
         )
         params.video_source = video_sources[selected_index][1]
-        config.app["video_source"] = params.video_source
+        CONF.video.video_source = params.video_source
 
         if params.video_source == "local":
             _supported_types = FILE_TYPE_VIDEOS + FILE_TYPE_IMAGES
@@ -520,9 +506,7 @@ with middle_panel:
             options=range(len(video_concat_modes)),  # 使用索引作为内部选项值
             format_func=lambda x: video_concat_modes[x][0],  # 显示给用户的是标签
         )
-        params.video_concat_mode = VideoConcatMode(
-            video_concat_modes[selected_index][1]
-        )
+        params.video_concat_mode = VideoConcatMode(video_concat_modes[selected_index][1])
 
         video_aspect_ratios = [
             (tr("Portrait"), VideoAspect.portrait.value),
@@ -536,7 +520,7 @@ with middle_panel:
         params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
 
         params.video_clip_duration = st.selectbox(
-            tr("Clip Duration"), options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=1
+            tr("Clip Duration"), options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=1,
         )
         params.video_count = st.selectbox(
             tr("Number of Videos Generated Simultaneously"),
@@ -551,12 +535,10 @@ with middle_panel:
 
         voices = voice.get_all_azure_voices(filter_locals=support_locales)
         friendly_names = {
-            v: v.replace("Female", tr("Female"))
-            .replace("Male", tr("Male"))
-            .replace("Neural", "")
+            v: v.replace("Female", tr("Female")).replace("Male", tr("Male")).replace("Neural", "")
             for v in voices
         }
-        saved_voice_name = config.ui.get("voice_name", "")
+        saved_voice_name = CONF.ui.voice_name
         saved_voice_name_index = 0
         if saved_voice_name in friendly_names:
             saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
@@ -579,7 +561,7 @@ with middle_panel:
             list(friendly_names.values()).index(selected_friendly_name)
         ]
         params.voice_name = voice_name
-        config.ui["voice_name"] = voice_name
+        CONF.ui.voice_name = voice_name
 
         if st.button(tr("Play Voice")):
             play_content = params.video_subject
@@ -615,10 +597,10 @@ with middle_panel:
             saved_azure_speech_region = config.azure.get("speech_region", "")
             saved_azure_speech_key = config.azure.get("speech_key", "")
             azure_speech_region = st.text_input(
-                tr("Speech Region"), value=saved_azure_speech_region
+                tr("Speech Region"), value=saved_azure_speech_region,
             )
             azure_speech_key = st.text_input(
-                tr("Speech Key"), value=saved_azure_speech_key, type="password"
+                tr("Speech Key"), value=saved_azure_speech_key, type="password",
             )
             config.azure["speech_region"] = azure_speech_region
             config.azure["speech_key"] = azure_speech_key
@@ -666,14 +648,12 @@ with right_panel:
         st.write(tr("Subtitle Settings"))
         params.subtitle_enabled = st.checkbox(tr("Enable Subtitles"), value=True)
         font_names = get_all_fonts()
-        saved_font_name = config.ui.get("font_name", "")
+        saved_font_name = CONF.ui.font_name
         saved_font_name_index = 0
         if saved_font_name in font_names:
             saved_font_name_index = font_names.index(saved_font_name)
-        params.font_name = st.selectbox(
-            tr("Font"), font_names, index=saved_font_name_index
-        )
-        config.ui["font_name"] = params.font_name
+        params.font_name = st.selectbox(tr("Font"), font_names, index=saved_font_name_index)
+        CONF.ui.font_name = params.font_name
 
         subtitle_positions = [
             (tr("Top"), "top"),
@@ -690,9 +670,7 @@ with right_panel:
         params.subtitle_position = subtitle_positions[selected_index][1]
 
         if params.subtitle_position == "custom":
-            custom_position = st.text_input(
-                tr("Custom Position (% from top)"), value="70.0"
-            )
+            custom_position = st.text_input(tr("Custom Position (% from top)"), value="70.0")
             try:
                 params.custom_position = float(custom_position)
                 if params.custom_position < 0 or params.custom_position > 100:
@@ -702,16 +680,14 @@ with right_panel:
 
         font_cols = st.columns([0.3, 0.7])
         with font_cols[0]:
-            saved_text_fore_color = config.ui.get("text_fore_color", "#FFFFFF")
-            params.text_fore_color = st.color_picker(
-                tr("Font Color"), saved_text_fore_color
-            )
-            config.ui["text_fore_color"] = params.text_fore_color
+            saved_text_fore_color = CONF.ui.text_fore_color
+            params.text_fore_color = st.color_picker(tr("Font Color"), saved_text_fore_color)
+            CONF.ui.text_fore_color = params.text_fore_color
 
         with font_cols[1]:
-            saved_font_size = config.ui.get("font_size", 60)
+            saved_font_size = CONF.ui.font_size
             params.font_size = st.slider(tr("Font Size"), 30, 100, saved_font_size)
-            config.ui["font_size"] = params.font_size
+            CONF.ui.font_size = params.font_size
 
         stroke_cols = st.columns([0.3, 0.7])
         with stroke_cols[0]:
@@ -721,14 +697,14 @@ with right_panel:
 
 start_button = st.button(tr("Generate Video"), use_container_width=True, type="primary")
 if start_button:
-    config.save_config()
+    # config.save_config()
     task_id = str(uuid4())
     if not params.video_subject and not params.video_script:
         st.error(tr("Video Script and Subject Cannot Both Be Empty"))
         scroll_to_bottom()
         st.stop()
 
-    if llm_provider != "g4f" and not config.app.get(f"{llm_provider}_api_key", ""):
+    if llm_provider != "g4f" and not CONF.default.api_key:
         st.error(tr("Please Enter the LLM API Key"))
         scroll_to_bottom()
         st.stop()
@@ -738,12 +714,12 @@ if start_button:
         scroll_to_bottom()
         st.stop()
 
-    if params.video_source == "pexels" and not config.app.get("pexels_api_keys", ""):
+    if params.video_source == "pexels" and not CONF.video.api_keys:
         st.error(tr("Please Enter the Pexels API Key"))
         scroll_to_bottom()
         st.stop()
 
-    if params.video_source == "pixabay" and not config.app.get("pixabay_api_keys", ""):
+    if params.video_source == "pixabay" and not CONF.video.api_keys:
         st.error(tr("Please Enter the Pixabay API Key"))
         scroll_to_bottom()
         st.stop()
@@ -765,7 +741,7 @@ if start_button:
     log_records = []
 
     def log_received(msg):
-        if config.ui["hide_log"]:
+        if CONF.default.hide_log:
             return
         with log_container:
             log_records.append(msg)
@@ -799,4 +775,4 @@ if start_button:
     logger.info(tr("Video Generation Completed"))
     scroll_to_bottom()
 
-config.save_config()
+# config.save_config()

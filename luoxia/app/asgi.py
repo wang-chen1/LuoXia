@@ -4,10 +4,10 @@ import os
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from loguru import logger
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from loguru import logger
 
 from luoxia.app.config import CONF
 from luoxia.app.models.exception import HttpException
@@ -25,9 +25,7 @@ def exception_handler(request: Request, e: HttpException):
 def validation_exception_handler(request: Request, e: RequestValidationError):
     return JSONResponse(
         status_code=400,
-        content=utils.get_response(
-            status=400, data=e.errors(), message="field required"
-        ),
+        content=utils.get_response(status=400, data=e.errors(), message="field required"),
     )
 
 
@@ -64,9 +62,7 @@ app.add_middleware(
 )
 
 task_dir = utils.task_dir()
-app.mount(
-    "/tasks", StaticFiles(directory=task_dir, html=True, follow_symlink=True), name=""
-)
+app.mount("/tasks", StaticFiles(directory=task_dir, html=True, follow_symlink=True), name="")
 
 public_dir = utils.public_dir()
 app.mount("/", StaticFiles(directory=public_dir, html=True), name="")
