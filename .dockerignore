@@ -20,5 +20,5 @@ __pycache__/
 .gitignore
 .svn/
 
-storage/
+/storage/
 config.toml

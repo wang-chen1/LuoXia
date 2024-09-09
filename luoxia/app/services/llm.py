@@ -37,7 +37,8 @@ class QwenLLM(GetLLMProvide):
 
         dashscope.api_key = self.api_key
         response = dashscope.Generation.call(
-            model=self.model_name, messages=[{"role": "user", "content": prompt}],
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
         )
         if response:
             if isinstance(response, GenerationResponse):
@@ -164,7 +165,8 @@ class AzureLLM(GetLLMProvide):
             azure_endpoint=self.base_url,
         )
         response = client.chat.completions.create(
-            model=self.model_name, messages=[{"role": "user", "content": prompt}],
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
         )
         if response:
             if isinstance(response, ChatCompletion):
@@ -191,7 +193,8 @@ class OtherLLM(GetLLMProvide):
         )
         try:
             response = client.chat.completions.create(
-                model=self.model_name, messages=[{"role": "user", "content": prompt}],
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
             )
         except OpenAIError as e:
             raise Exception(f"{CONF.default.llm_provider} config error, please check it")

@@ -187,7 +187,10 @@ def save_video(video_url: str, save_dir: str = "") -> str:
     with open(video_path, "wb") as f:
         f.write(
             requests.get(
-                video_url, proxies=CONF.proxy.https, verify=False, timeout=(60, 240),
+                video_url,
+                proxies=CONF.proxy.https,
+                verify=False,
+                timeout=(60, 240),
             ).content,
         )
 

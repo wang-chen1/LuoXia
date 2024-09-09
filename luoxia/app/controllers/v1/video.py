@@ -44,7 +44,8 @@ redis_url = f"redis://:{_redis_password}@{_redis_host}:{_redis_port}/{_redis_db}
 # 根据配置选择合适的任务管理器
 if _enable_redis:
     task_manager = RedisTaskManager(
-        max_concurrent_tasks=_max_concurrent_tasks, redis_url=redis_url,
+        max_concurrent_tasks=_max_concurrent_tasks,
+        redis_url=redis_url,
     )
 else:
     task_manager = InMemoryTaskManager(max_concurrent_tasks=_max_concurrent_tasks)
@@ -186,7 +187,9 @@ def upload_bgm_file(request: Request, file: UploadFile = File(...)):
         return utils.get_response(200, response)
 
     raise HttpException(
-        "", status_code=400, message=f"{request_id}: Only *.mp3 files can be uploaded",
+        "",
+        status_code=400,
+        message=f"{request_id}: Only *.mp3 files can be uploaded",
     )
 
 

@@ -54,6 +54,7 @@ exclude = '''
     | buck-out
     | build
     | dist
+    | strorage
   )/
   | exclude.py
 )

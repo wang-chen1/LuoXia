@@ -37,7 +37,9 @@ def generate_terms(task_id, params, video_script):
     video_terms = params.video_terms
     if not video_terms:
         video_terms = llm.generate_terms(
-            video_subject=params.video_subject, video_script=video_script, amount=5,
+            video_subject=params.video_subject,
+            video_script=video_script,
+            amount=5,
         )
     else:
         if isinstance(video_terms, str):
@@ -124,7 +126,8 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         materials = video.preprocess_video(
-            materials=params.video_materials, clip_duration=params.video_clip_duration,
+            materials=params.video_materials,
+            clip_duration=params.video_clip_duration,
         )
         if not materials:
             sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
@@ -213,7 +216,10 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if stop_at == "script":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, script=video_script,
+            task_id,
+            state=const.TASK_STATE_COMPLETE,
+            progress=100,
+            script=video_script,
         )
         return {"script": video_script}
 
@@ -229,7 +235,10 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if stop_at == "terms":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, terms=video_terms,
+            task_id,
+            state=const.TASK_STATE_COMPLETE,
+            progress=100,
+            terms=video_terms,
         )
         return {"script": video_script, "terms": video_terms}
 
@@ -285,7 +294,11 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     # 6. Generate final videos
     final_video_paths, combined_video_paths = generate_final_videos(
-        task_id, params, downloaded_videos, audio_file, subtitle_path,
+        task_id,
+        params,
+        downloaded_videos,
+        audio_file,
+        subtitle_path,
     )
 
     if not final_video_paths:

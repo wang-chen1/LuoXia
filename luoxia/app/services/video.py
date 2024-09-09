@@ -232,7 +232,10 @@ def generate_video(
         phrase = subtitle_item[1]
         max_width = video_width * 0.9
         wrapped_txt, txt_height = wrap_text(
-            phrase, max_width=max_width, font=font_path, fontsize=params.font_size,
+            phrase,
+            max_width=max_width,
+            font=font_path,
+            fontsize=params.font_size,
         )
         _clip = TextClip(
             wrapped_txt,

@@ -1046,7 +1046,10 @@ def convert_rate_to_percent(rate: float) -> str:
 
 
 def azure_tts_v1(
-    text: str, voice_name: str, voice_rate: float, voice_file: str,
+    text: str,
+    voice_name: str,
+    voice_rate: float,
+    voice_file: str,
 ) -> [SubMaker, None]:
     voice_name = parse_voice_name(voice_name)
     text = text.strip()
@@ -1064,7 +1067,8 @@ def azure_tts_v1(
                             file.write(chunk["data"])
                         elif chunk["type"] == "WordBoundary":
                             sub_maker.create_sub(
-                                (chunk["offset"], chunk["duration"]), chunk["text"],
+                                (chunk["offset"], chunk["duration"]),
+                                chunk["text"],
                             )
                 return sub_maker
 
@@ -1129,7 +1133,8 @@ def azure_tts_v2(text: str, voice_name: str, voice_file: str) -> [SubMaker, None
             speech_key = config.azure.get("speech_key", "")
             service_region = config.azure.get("speech_region", "")
             audio_config = speechsdk.audio.AudioOutputConfig(
-                filename=voice_file, use_default_speaker=True,
+                filename=voice_file,
+                use_default_speaker=True,
             )
             speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
             speech_config.speech_synthesis_voice_name = voice_name
@@ -1144,7 +1149,8 @@ def azure_tts_v2(text: str, voice_name: str, voice_file: str) -> [SubMaker, None
                 speechsdk.SpeechSynthesisOutputFormat.Audio48Khz192KBitRateMonoMp3,
             )
             speech_synthesizer = speechsdk.SpeechSynthesizer(
-                audio_config=audio_config, speech_config=speech_config,
+                audio_config=audio_config,
+                speech_config=speech_config,
             )
             speech_synthesizer.synthesis_word_boundary.connect(
                 speech_synthesizer_word_boundary_cb,

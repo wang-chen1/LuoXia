@@ -1,11 +1,31 @@
 import os
 import sys
+from pathlib import Path
 
 from loguru import logger
 
 from luoxia.app.config.config import Configuration
 
 CONF = Configuration()
+
+ROOT_DIR = None
+
+
+def get_project_root():
+    global ROOT_DIR
+    print("0" * 100)
+    if ROOT_DIR:
+        print("1" * 100)
+        return
+    ROOT_DIR = Path(__file__).resolve().parent
+    for parent in ROOT_DIR.parents:
+        if (
+            (parent / ".git").exists()
+            or (parent / "pyproject.toml").exists()
+            or (parent / "setup.py").exists()
+        ):
+            return parent
+    return ROOT_DIR
 
 
 def __init_logger():
@@ -41,3 +61,4 @@ def __init_logger():
 
 
 __init_logger()
+get_project_root()

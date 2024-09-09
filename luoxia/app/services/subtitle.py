@@ -28,7 +28,9 @@ def create(audio_file, subtitle_file: str = ""):
         )
         try:
             model = WhisperModel(
-                model_size_or_path=model_path, device=device, compute_type=compute_type,
+                model_size_or_path=model_path,
+                device=device,
+                compute_type=compute_type,
             )
         except Exception as e:
             logger.error(
@@ -122,7 +124,12 @@ def create(audio_file, subtitle_file: str = ""):
         text = subtitle.get("msg")
         if text:
             lines.append(
-                utils.text_to_srt(idx, text, subtitle.get("start_time"), subtitle.get("end_time")),
+                utils.text_to_srt(
+                    idx,
+                    text,
+                    subtitle.get("start_time"),
+                    subtitle.get("end_time"),
+                ),
             )
             idx += 1
 
@@ -206,7 +213,8 @@ def correct(subtitle_file, video_script):
             while next_subtitle_index < len(subtitle_items):
                 next_subtitle = subtitle_items[next_subtitle_index][2].strip()
                 if similarity(script_line, combined_subtitle + " " + next_subtitle) > similarity(
-                    script_line, combined_subtitle,
+                    script_line,
+                    combined_subtitle,
                 ):
                     combined_subtitle += " " + next_subtitle
                     end_time = subtitle_items[next_subtitle_index][1].split(" --> ")[1]
