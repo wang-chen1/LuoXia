@@ -7,9 +7,8 @@ from typing import Union
 from fastapi import BackgroundTasks, Depends, Path, Request, UploadFile
 from fastapi.params import File
 from fastapi.responses import FileResponse, StreamingResponse
-from loguru import logger
 
-from luoxia.app.config import CONF
+from luoxia.app.config import CONF, LOG
 from luoxia.app.controllers import base
 from luoxia.app.controllers.manager.memory_manager import InMemoryTaskManager
 from luoxia.app.controllers.manager.redis_manager import RedisTaskManager
@@ -81,7 +80,7 @@ def create_task(
         }
         sm.state.update_task(task_id)
         task_manager.add_task(tm.start, task_id=task_id, params=body, stop_at=stop_at)
-        logger.success(f"Task created: {utils.to_json(task)}")
+        LOG.success(f"Task created: {utils.to_json(task)}")
         return utils.get_response(200, task)
     except ValueError as e:
         raise HttpException(task_id=task_id, status_code=400, message=f"{request_id}: {str(e)}")
@@ -143,7 +142,7 @@ def delete_video(request: Request, task_id: str = Path(..., description="Task ID
             shutil.rmtree(current_task_dir)
 
         sm.state.delete_task(task_id)
-        logger.success(f"video deleted: {utils.to_json(task)}")
+        LOG.success(f"video deleted: {utils.to_json(task)}")
         return utils.get_response(200)
 
     raise HttpException(task_id=task_id, status_code=404, message=f"{request_id}: task not found")

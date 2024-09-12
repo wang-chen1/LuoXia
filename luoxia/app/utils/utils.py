@@ -1,15 +1,14 @@
 import json
 import locale
 import os
-import platform
 import threading
 from typing import Any
 from uuid import uuid4
 
 import urllib3
-from loguru import logger
 
 from luoxia.app.models import const
+from luoxia.app.config import ROOT_DIR, LOG
 
 urllib3.disable_warnings()
 
@@ -65,28 +64,29 @@ def get_uuid(remove_hyphen: bool = False):
 
 
 def root_dir():
-    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    return ROOT_DIR
 
 
-def storage_dir(sub_dir: str = "", create: bool = False):
-    d = os.path.join(root_dir(), "storage")
+def get_create_storage_dir(sub_dir: str = "", create: bool = False):
+    storage_dir = ROOT_DIR.joinpath("storage")
     if sub_dir:
-        d = os.path.join(d, sub_dir)
-    if create and not os.path.exists(d):
-        os.makedirs(d)
+        storage_dir.joinpath(sub_dir)
+    if create and not storage_dir:
+        storage_dir.mkdir(parents=True, exist_ok=True)
 
-    return d
+    return storage_dir
 
 
 def resource_dir(sub_dir: str = ""):
-    d = os.path.join(root_dir(), "resource")
+    d = ROOT_DIR.joinpath("resource")
     if sub_dir:
-        d = os.path.join(d, sub_dir)
+        d.joinpath(sub_dir)
     return d
 
 
 def task_dir(sub_dir: str = ""):
-    d = os.path.join(storage_dir(), "tasks")
+
+    d = os.path.join(get_create_storage_dir(), "tasks")
     if sub_dir:
         d = os.path.join(d, sub_dir)
     if not os.path.exists(d):
@@ -126,7 +126,7 @@ def run_in_background(func, *args, **kwargs):
         try:
             func(*args, **kwargs)
         except Exception as e:
-            logger.error(f"run_in_background error: {e}")
+            LOG.error(f"run_in_background error: {e}")
 
     thread = threading.Thread(target=run)
     thread.start()

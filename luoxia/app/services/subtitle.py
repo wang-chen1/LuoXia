@@ -4,9 +4,8 @@ import re
 from timeit import default_timer as timer
 
 from faster_whisper import WhisperModel
-from loguru import logger
 
-from luoxia.app.config import CONF
+from luoxia.app.config import CONF, LOG
 from luoxia.app.utils import utils
 
 model_size = CONF.whisper.model_size
@@ -23,7 +22,7 @@ def create(audio_file, subtitle_file: str = ""):
         if not os.path.isdir(model_path) or not os.path.isfile(model_bin_file):
             model_path = model_size
 
-        logger.info(
+        LOG.info(
             f"loading model: {model_path}, device: {device}, compute_type: {compute_type}",
         )
         try:
@@ -33,7 +32,7 @@ def create(audio_file, subtitle_file: str = ""):
                 compute_type=compute_type,
             )
         except Exception as e:
-            logger.error(
+            LOG.error(
                 f"failed to load model: {e} \n\n"
                 f"********************************************\n"
                 f"this may be caused by network issue. \n"
@@ -43,7 +42,7 @@ def create(audio_file, subtitle_file: str = ""):
             )
             return None
 
-    logger.info(f"start, output file: {subtitle_file}")
+    LOG.info(f"start, output file: {subtitle_file}")
     if not subtitle_file:
         subtitle_file = f"{audio_file}.srt"
 
@@ -55,7 +54,7 @@ def create(audio_file, subtitle_file: str = ""):
         vad_parameters=dict(min_silence_duration_ms=500),
     )
 
-    logger.info(
+    LOG.info(
         f"detected language: '{info.language}', probability: {info.language_probability:.2f}",
     )
 
@@ -68,7 +67,7 @@ def create(audio_file, subtitle_file: str = ""):
             return
 
         msg = "[%.2fs -> %.2fs] %s" % (seg_start, seg_end, seg_text)
-        logger.debug(msg)
+        LOG.debug(msg)
 
         subtitles.append({"msg": seg_text, "start_time": seg_start, "end_time": seg_end})
 
@@ -116,7 +115,7 @@ def create(audio_file, subtitle_file: str = ""):
     end = timer()
 
     diff = end - start
-    logger.info(f"complete, elapsed: {diff:.2f} s")
+    LOG.info(f"complete, elapsed: {diff:.2f} s")
 
     idx = 1
     lines = []
@@ -136,7 +135,7 @@ def create(audio_file, subtitle_file: str = ""):
     sub = "\n".join(lines) + "\n"
     with open(subtitle_file, "w", encoding="utf-8") as f:
         f.write(sub)
-    logger.info(f"subtitle file created: {subtitle_file}")
+    LOG.info(f"subtitle file created: {subtitle_file}")
 
 
 def file_to_subtitles(filename):
@@ -223,7 +222,7 @@ def correct(subtitle_file, video_script):
                     break
 
             if similarity(script_line, combined_subtitle) > 0.8:
-                logger.warning(
+                LOG.warning(
                     f"Merged/Corrected - Script: {script_line}, Subtitle: {combined_subtitle}",
                 )
                 new_subtitle_items.append(
@@ -235,7 +234,7 @@ def correct(subtitle_file, video_script):
                 )
                 corrected = True
             else:
-                logger.warning(f"Mismatch - Script: {script_line}, Subtitle: {combined_subtitle}")
+                LOG.warning(f"Mismatch - Script: {script_line}, Subtitle: {combined_subtitle}")
                 new_subtitle_items.append(
                     (
                         len(new_subtitle_items) + 1,
@@ -250,7 +249,7 @@ def correct(subtitle_file, video_script):
 
     # 处理剩余的脚本行
     while script_index < len(script_lines):
-        logger.warning(f"Extra script line: {script_lines[script_index]}")
+        LOG.warning(f"Extra script line: {script_lines[script_index]}")
         if subtitle_index < len(subtitle_items):
             new_subtitle_items.append(
                 (
@@ -275,9 +274,9 @@ def correct(subtitle_file, video_script):
         with open(subtitle_file, "w", encoding="utf-8") as fd:
             for i, item in enumerate(new_subtitle_items):
                 fd.write(f"{i + 1}\n{item[1]}\n{item[2]}\n\n")
-        logger.info("Subtitle corrected")
+        LOG.info("Subtitle corrected")
     else:
-        logger.success("Subtitle is correct")
+        LOG.success("Subtitle is correct")
 
 
 if __name__ == "__main__":

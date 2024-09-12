@@ -4,32 +4,13 @@ from typing import List
 from urllib.parse import urlencode
 
 import requests
-from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-from luoxia.app.config import CONF
+from luoxia.app.config import CONF, LOG
 from luoxia.app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
 from luoxia.app.utils import utils
 
 requested_count = 0
-
-
-# def get_api_key(cfg_key: str):
-#     api_keys = config.app.get(cfg_key)
-#     if not api_keys:
-#         raise ValueError(
-#             f"\n\n##### {cfg_key} is not set #####\n\nPlease set it in the config.toml file: {config.config_file}\n\n"
-#             f"{utils.to_json(config.app)}"
-#         )
-
-#     # if only one key is provided, return it
-#     if isinstance(api_keys, str):
-#         return api_keys
-
-#     global requested_count
-#     requested_count += 1
-#     return api_keys[requested_count % len(api_keys)]
-
 
 def search_videos_pexels(
     search_term: str,
@@ -40,25 +21,29 @@ def search_videos_pexels(
     video_orientation = aspect.name
     video_width, video_height = aspect.to_resolution()
     api_key = CONF.video.api_keys[0]
-    headers = {"Authorization": api_key}
+    headers = {
+        "Authorization": api_key,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    }
     # Build URL
     params = {"query": search_term, "per_page": 20, "orientation": video_orientation}
-    query_url = f"https://api.pexels.com/videos/search?{urlencode(params)}"
-    logger.info(f"searching videos: {query_url}, with proxies: {CONF.proxy.https}")
+    query_url = CONF.video.video_url
 
     res = requests.get(
         query_url,
+        params=params,
         headers=headers,
         proxies=CONF.proxy.https,
         verify=False,
         timeout=(30, 60),
     )
+    print("res.status_code", res.status_code, res.url)
     if res.status_code != 200:
-        raise Exception(str(res.content))
+        raise Exception()
     response = res.json()
     video_items = []
     if "videos" not in response:
-        logger.error(f"search videos failed: {response}")
+        LOG.error(f"search videos failed: {response}")
         return video_items
     videos = response["videos"]
     # loop through each video in the result
@@ -99,8 +84,8 @@ def search_videos_pixabay(
         "per_page": 50,
         "key": api_key,
     }
-    query_url = CONF.video.url_base + f"?{urlencode(params)}"
-    logger.info(f"searching videos: {query_url}, with proxies: {CONF.proxy.https}")
+    query_url = CONF.video.video_url + f"?{urlencode(params)}"
+    LOG.info(f"searching videos: {query_url}, with proxies: {CONF.proxy.https}")
 
     # try:
     #     r = requests.get(
@@ -109,7 +94,7 @@ def search_videos_pixabay(
     #     response = r.json()
     #     video_items = []
     #     if "hits" not in response:
-    #         logger.error(f"search videos failed: {response}")
+    #         LOG.error(f"search videos failed: {response}")
     #         return video_items
     #     videos = response["hits"]
     #     # loop through each video in the result
@@ -133,7 +118,7 @@ def search_videos_pixabay(
     #                 break
     #     return video_items
     # except Exception as e:
-    # logger.error(f"search videos failed: {str(e)}")
+    # LOG.error(f"search videos failed: {str(e)}")
 
     res = requests.get(query_url, proxies=CONF.proxy.https, verify=False, timeout=(30, 60))
     if res.status_code != 200:
@@ -141,7 +126,7 @@ def search_videos_pixabay(
     response = res.json()
     video_items = []
     if "hits" not in response:
-        logger.error(f"search videos failed: {response}")
+        LOG.error(f"search videos failed: {response}")
         return video_items
     videos = response["hits"]
     # loop through each video in the result
@@ -168,7 +153,7 @@ def search_videos_pixabay(
 
 def save_video(video_url: str, save_dir: str = "") -> str:
     if not save_dir:
-        save_dir = utils.storage_dir("cache_videos")
+        save_dir = utils.get_create_storage_dir("cache_videos")
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -180,7 +165,7 @@ def save_video(video_url: str, save_dir: str = "") -> str:
 
     # if video already exists, return the path
     if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
-        logger.info(f"video already exists: {video_path}")
+        LOG.info(f"video already exists: {video_path}")
         return video_path
 
     # if video does not exist, download it
@@ -207,7 +192,7 @@ def save_video(video_url: str, save_dir: str = "") -> str:
                 os.remove(video_path)
             except Exception as e:
                 pass
-            logger.warning(f"invalid video file: {video_path} => {str(e)}")
+            LOG.warning(f"invalid video file: {video_path} => {str(e)}")
     return ""
 
 
@@ -233,7 +218,7 @@ def download_videos(
             minimum_duration=max_clip_duration,
             video_aspect=video_aspect,
         )
-        logger.info(f"found {len(video_items)} videos for '{search_term}'")
+        LOG.info(f"found {len(video_items)} videos for '{search_term}'")
 
         for item in video_items:
             if item.url not in valid_video_urls:
@@ -241,7 +226,7 @@ def download_videos(
                 valid_video_urls.append(item.url)
                 found_duration += item.duration
 
-    logger.info(
+    LOG.info(
         f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds",
     )
     video_paths = []
@@ -258,21 +243,21 @@ def download_videos(
     total_duration = 0.0
     for item in valid_video_items:
         try:
-            logger.info(f"downloading video: {item.url}")
+            LOG.info(f"downloading video: {item.url}")
             saved_video_path = save_video(video_url=item.url, save_dir=material_directory)
             if saved_video_path:
-                logger.info(f"video saved: {saved_video_path}")
+                LOG.info(f"video saved: {saved_video_path}")
                 video_paths.append(saved_video_path)
                 seconds = min(max_clip_duration, item.duration)
                 total_duration += seconds
                 if total_duration > audio_duration:
-                    logger.info(
+                    LOG.info(
                         f"total duration of downloaded videos: {total_duration} seconds, skip downloading more",
                     )
                     break
         except Exception as e:
-            logger.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
-    logger.success(f"downloaded {len(video_paths)} videos")
+            LOG.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
+    LOG.success(f"downloaded {len(video_paths)} videos")
     return video_paths
 
 

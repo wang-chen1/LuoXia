@@ -7,9 +7,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from loguru import logger
 
-from luoxia.app.config import CONF
+from luoxia.app.config import CONF, LOG
 from luoxia.app.models.exception import HttpException
 from luoxia.app.router import root_api_router
 from luoxia.app.utils import utils
@@ -70,9 +69,9 @@ app.mount("/", StaticFiles(directory=public_dir, html=True), name="")
 
 @app.on_event("shutdown")
 def shutdown_event():
-    logger.info("shutdown event")
+    LOG.info("shutdown event")
 
 
 @app.on_event("startup")
 def startup_event():
-    logger.info("startup event")
+    LOG.info("startup event")

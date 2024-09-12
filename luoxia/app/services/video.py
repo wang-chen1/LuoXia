@@ -2,7 +2,6 @@ import glob
 import random
 from typing import List
 
-from loguru import logger
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from PIL import ImageFont
@@ -10,6 +9,7 @@ from PIL import ImageFont
 from luoxia.app.models import const
 from luoxia.app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode, VideoParams
 from luoxia.app.utils import utils
+from luoxia.app.config.log import LOG
 
 
 def get_bgm_file(bgm_type: str = "random", bgm_file: str = ""):
@@ -39,11 +39,11 @@ def combine_videos(
 ) -> str:
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
-    logger.info(f"max duration of audio: {audio_duration} seconds")
+    LOG.info(f"max duration of audio: {audio_duration} seconds")
     # Required duration of each clip
     req_dur = audio_duration / len(video_paths)
     req_dur = max_clip_duration
-    logger.info(f"each clip will be maximum {req_dur} seconds long")
+    LOG.info(f"each clip will be maximum {req_dur} seconds long")
     output_dir = os.path.dirname(combined_video_path)
 
     aspect = VideoAspect(video_aspect)
@@ -62,7 +62,7 @@ def combine_videos(
             end_time = min(start_time + max_clip_duration, clip_duration)
             split_clip = clip.subclip(start_time, end_time)
             raw_clips.append(split_clip)
-            # logger.info(f"splitting from {start_time:.2f} to {end_time:.2f}, clip duration {clip_duration:.2f}, split_clip duration {split_clip.duration:.2f}")
+            # LOG.info(f"splitting from {start_time:.2f} to {end_time:.2f}, clip duration {clip_duration:.2f}, split_clip duration {split_clip.duration:.2f}")
             start_time = end_time
             if video_concat_mode.value == VideoConcatMode.sequential.value:
                 break
@@ -112,7 +112,7 @@ def combine_videos(
                         ],
                     )
 
-                logger.info(
+                LOG.info(
                     f"resizing video to {video_width} x {video_height}, clip size: {clip_w} x {clip_h}",
                 )
 
@@ -124,7 +124,7 @@ def combine_videos(
 
     video_clip = concatenate_videoclips(clips)
     video_clip = video_clip.set_fps(30)
-    logger.info("writing")
+    LOG.info("writing")
     # https://github.com/harry0703/MoneyPrinterTurbo/issues/111#issuecomment-2032354030
     video_clip.write_videofile(
         filename=combined_video_path,
@@ -135,7 +135,7 @@ def combine_videos(
         fps=30,
     )
     video_clip.close()
-    logger.success("completed")
+    LOG.success("completed")
     return combined_video_path
 
 
@@ -152,7 +152,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     if width <= max_width:
         return text, height
 
-    # logger.warning(f"wrapping text, max_width: {max_width}, text_width: {width}, text: {text}")
+    # LOG.warning(f"wrapping text, max_width: {max_width}, text_width: {width}, text: {text}")
 
     processed = True
 
@@ -176,7 +176,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
         _wrapped_lines_ = [line.strip() for line in _wrapped_lines_]
         result = "\n".join(_wrapped_lines_).strip()
         height = len(_wrapped_lines_) * height
-        # logger.warning(f"wrapped text: {result}")
+        # LOG.warning(f"wrapped text: {result}")
         return result, height
 
     _wrapped_lines_ = []
@@ -193,7 +193,7 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     _wrapped_lines_.append(_txt_)
     result = "\n".join(_wrapped_lines_).strip()
     height = len(_wrapped_lines_) * height
-    # logger.warning(f"wrapped text: {result}")
+    # LOG.warning(f"wrapped text: {result}")
     return result, height
 
 
@@ -207,11 +207,11 @@ def generate_video(
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
 
-    logger.info(f"start, video size: {video_width} x {video_height}")
-    logger.info(f"  ① video: {video_path}")
-    logger.info(f"  ② audio: {audio_path}")
-    logger.info(f"  ③ subtitle: {subtitle_path}")
-    logger.info(f"  ④ output: {output_file}")
+    LOG.info(f"start, video size: {video_width} x {video_height}")
+    LOG.info(f"  ① video: {video_path}")
+    LOG.info(f"  ② audio: {audio_path}")
+    LOG.info(f"  ③ subtitle: {subtitle_path}")
+    LOG.info(f"  ④ output: {output_file}")
 
     # https://github.com/harry0703/MoneyPrinterTurbo/issues/217
     # PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'final-1.mp4.tempTEMP_MPY_wvf_snd.mp3'
@@ -226,7 +226,7 @@ def generate_video(
         if os.name == "nt":
             font_path = font_path.replace("\\", "/")
 
-        logger.info(f"using font: {font_path}")
+        LOG.info(f"using font: {font_path}")
 
     def create_text_clip(subtitle_item):
         phrase = subtitle_item[1]
@@ -285,7 +285,7 @@ def generate_video(
             bgm_clip = afx.audio_loop(bgm_clip, duration=video_clip.duration)
             audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
         except Exception as e:
-            logger.error(f"failed to add bgm: {str(e)}")
+            LOG.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.set_audio(audio_clip)
     video_clip.write_videofile(
@@ -298,7 +298,7 @@ def generate_video(
     )
     video_clip.close()
     del video_clip
-    logger.success("completed")
+    LOG.success("completed")
 
 
 def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
@@ -315,11 +315,11 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
         width = clip.size[0]
         height = clip.size[1]
         if width < 480 or height < 480:
-            logger.warning(f"video is too small, width: {width}, height: {height}")
+            LOG.warning(f"video is too small, width: {width}, height: {height}")
             continue
 
         if ext in const.FILE_TYPE_IMAGES:
-            logger.info(f"processing image: {material.url}")
+            LOG.info(f"processing image: {material.url}")
             # 创建一个图片剪辑，并设置持续时间为3秒钟
             clip = ImageClip(material.url).set_duration(clip_duration).set_position("center")
             # 使用resize方法来添加缩放效果。这里使用了lambda函数来使得缩放效果随时间变化。
@@ -338,7 +338,7 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
             final_clip.close()
             del final_clip
             material.url = video_file
-            logger.success(f"completed: {video_file}")
+            LOG.success(f"completed: {video_file}")
     return materials
 
 
@@ -364,9 +364,9 @@ if __name__ == "__main__":
     # output_file = f"{task_dir}/final.mp4"
     #
     # # video_paths = []
-    # # for file in os.listdir(utils.storage_dir("test")):
+    # # for file in os.listdir(utils.get_create_storage_dir("test")):
     # #     if file.endswith(".mp4"):
-    # #         video_paths.append(os.path.join(utils.storage_dir("test"), file))
+    # #         video_paths.append(os.path.join(utils.get_create_storage_dir("test"), file))
     # #
     # # combine_videos(combined_video_path=video_file,
     # #                audio_file=audio_file,

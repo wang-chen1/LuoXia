@@ -4,7 +4,6 @@ import socket
 from functools import lru_cache
 
 import toml
-from loguru import logger
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 config_file = f"{root_dir}/config.toml"
@@ -25,8 +24,8 @@ class Configuration:
             example_file = f"{root_dir}/config.example.toml"
             if os.path.isfile(example_file):
                 shutil.copyfile(example_file, config_file)
-                logger.debug(f"copy config.example.toml to config.toml")
-        logger.debug(f"load config from file: {config_file}")
+        #         logger.debug(f"copy config.example.toml to config.toml")
+        # logger.debug(f"load config from file: {config_file}")
 
         if self._config is None:
             with open(config_file, mode="r", encoding="utf-8-sig") as f:

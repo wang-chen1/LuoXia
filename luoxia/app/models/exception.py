@@ -1,7 +1,7 @@
 import traceback
 from typing import Any
 
-from loguru import logger
+from luoxia.app.config.log import LOG
 
 
 class HttpException(Exception):
@@ -17,9 +17,9 @@ class HttpException(Exception):
             msg = f"HttpException: {status_code}, {task_id}, {message}\n{tb_str}"
 
         if status_code == 400:
-            logger.warning(msg)
+            LOG.warning(msg)
         else:
-            logger.error(msg)
+            LOG.error(msg)
 
 
 class FileNotFoundException(Exception):

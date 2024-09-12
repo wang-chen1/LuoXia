@@ -26,3 +26,5 @@ node_modules
 
 .venv
 test.py
+
+/log/

@@ -327,3 +327,7 @@ class BgmUploadResponse(BaseResponse):
                 "data": {"file": "/MoneyPrinterTurbo/resource/songs/example.mp3"},
             },
         }
+
+class ResourceType(str, Enum):
+    fonts = "ttc"
+    songs = "mp3"

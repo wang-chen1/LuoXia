@@ -6,11 +6,10 @@ from typing import List
 
 import g4f
 from google import generativeai as genai
-from loguru import logger
 from openai import AzureOpenAI, OpenAI, OpenAIError
 from openai.types.chat import ChatCompletion
 
-from luoxia.app.config import CONF
+from luoxia.app.config import CONF, LOG
 
 llm_generate_max_retries = CONF.default.llm_generate_max_retries
 
@@ -118,7 +117,7 @@ class CloudflareLLM(GetLLMProvide):
             },
         )
         result = response.json()
-        logger.info(result)
+        LOG.info(result)
         return result["result"]["response"]
 
 
@@ -271,13 +270,13 @@ Generate a script for a video, depending on the subject of the video.
 
 
 def generate_script(video_subject: str, language: str = "", paragraph_number: int = 1) -> str:
-    logger.info(f"llm provider type {CONF.default.llm_provider}")
+    LOG.info(f"llm provider type {CONF.default.llm_provider}")
     prompt = prompt_script(video_subject, paragraph_number)
     if language:
         prompt += f"\n- language: {language}"
 
     final_script = ""
-    logger.info(f"subject: {video_subject}")
+    LOG.info(f"subject: {video_subject}")
 
     def format_response(response):
         # Clean the script
@@ -313,12 +312,12 @@ def generate_script(video_subject: str, language: str = "", paragraph_number: in
             if final_script:
                 break
         except Exception as e:
-            logger.error(f"failed to generate script: {e}")
+            LOG.error(f"failed to generate script: {e}")
 
         if i < llm_generate_max_retries:
-            logger.warning(f"failed to generate video script, trying again... {i + 1}")
+            LOG.warning(f"failed to generate video script, trying again... {i + 1}")
 
-    logger.success(f"completed: \n{final_script}")
+    LOG.success(f"completed: \n{final_script}")
     return final_script.strip()
 
 
@@ -353,7 +352,7 @@ Please note that you must use English for generating video search terms; Chinese
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
     prompt = prompt_terms(amount, video_subject, video_script)
 
-    logger.info(f"subject: {video_subject}")
+    LOG.info(f"subject: {video_subject}")
 
     search_terms = []
     response = ""
@@ -364,26 +363,26 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
             if not isinstance(search_terms, list) or not all(
                 isinstance(term, str) for term in search_terms
             ):
-                logger.error("response is not a list of strings.")
+                LOG.error("response is not a list of strings.")
                 continue
 
         except Exception as e:
-            logger.warning(f"failed to generate video terms: {str(e)}")
+            LOG.warning(f"failed to generate video terms: {str(e)}")
             if response:
                 match = re.search(r"\[.*]", response)
                 if match:
                     try:
                         search_terms = json.loads(match.group())
                     except Exception as e:
-                        logger.warning(f"failed to generate video terms: {str(e)}")
+                        LOG.warning(f"failed to generate video terms: {str(e)}")
                         pass
 
         if search_terms and len(search_terms) > 0:
             break
         if i < llm_generate_max_retries:
-            logger.warning(f"failed to generate video terms, trying again... {i + 1}")
+            LOG.warning(f"failed to generate video terms, trying again... {i + 1}")
 
-    logger.success(f"completed: \n{search_terms}")
+    LOG.success(f"completed: \n{search_terms}")
     return search_terms
 
 
