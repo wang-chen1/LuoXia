@@ -121,5 +121,5 @@ run_api:
 	python main.python
 
 run_streamlit: 
-	streamlit run $(ROOT_DIR)/luoxia/webui/main.py --browser.serverAddress="0.0.0.0" \
+	streamlit run $(ROOT_DIR)/luoxia/streamlit_web/main.py --browser.serverAddress="0.0.0.0" \
 	--server.enableCORS=True --browser.gatherUsageStats=False

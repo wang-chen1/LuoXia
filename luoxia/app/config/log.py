@@ -27,8 +27,8 @@ def setup(sink, debug: bool = False) -> None:
     backtrace = False
     diagnose = True
     serialize = False
-    if debug:
-        level = "DEBUG"
+
+    if debug == "DEBUG":
         colorize = True
         backtrace = True
         diagnose = True

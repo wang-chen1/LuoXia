@@ -5,4 +5,4 @@
 
 # export HF_ENDPOINT=https://hf-mirror.com
 
-streamlit run ./webui/main.py --browser.serverAddress="0.0.0.0" --server.enableCORS=True --browser.gatherUsageStats=False
+streamlit run ./streamlit_web/main.py --browser.serverAddress="0.0.0.0" --server.enableCORS=True --browser.gatherUsageStats=False

@@ -18,7 +18,7 @@
 
 <h4>Web界面</h4>
 
-![](docs/webui.jpg)
+![](docs/streamlit_web.jpg)
 
 <h4>API界面</h4>
 
@@ -225,14 +225,14 @@ pip install -r requirements.txt
 
 ```bat
 conda activate MoneyPrinterTurbo
-webui.bat
+streamlit_web.bat
 ```
 
 ###### MacOS or Linux
 
 ```shell
 conda activate MoneyPrinterTurbo
-sh webui.sh
+sh streamlit_web.sh
 ```
 
 启动后，会自动打开浏览器（如果打开是空白，建议换成 **Chrome** 或者 **Edge** 打开）

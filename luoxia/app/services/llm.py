@@ -365,7 +365,6 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
             ):
                 LOG.error("response is not a list of strings.")
                 continue
-
         except Exception as e:
             LOG.warning(f"failed to generate video terms: {str(e)}")
             if response:

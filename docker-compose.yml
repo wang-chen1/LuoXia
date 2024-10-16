@@ -2,14 +2,14 @@ x-common-volumes: &common-volumes
   - ./:/MoneyPrinterTurbo
 
 services:
-  webui:
+  streamlit_web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: "webui"
+    container_name: "streamlit_web"
     ports:
       - "8501:8501"
-    command: [ "streamlit", "run", "./webui/main.py","--browser.serverAddress=127.0.0.1","--server.enableCORS=True","--browser.gatherUsageStats=False" ]
+    command: [ "streamlit", "run", "./streamlit_web/main.py","--browser.serverAddress=127.0.0.1","--server.enableCORS=True","--browser.gatherUsageStats=False" ]
     volumes: *common-volumes
     restart: always
   api:

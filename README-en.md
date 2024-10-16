@@ -17,9 +17,9 @@
 Simply provide a <b>topic</b> or <b>keyword</b> for a video, and it will automatically generate the video copy, video
 materials, video subtitles, and video background music before synthesizing a high-definition short video.
 
-### WebUI
+### streamlit_web
 
-![](docs/webui-en.jpg)
+![](docs/streamlit_web-en.jpg)
 
 ### API Interface
 
@@ -210,14 +210,14 @@ Note that you need to execute the following commands in the `root directory` of 
 
 ```bat
 conda activate MoneyPrinterTurbo
-webui.bat
+streamlit_web.bat
 ```
 
 ###### MacOS or Linux
 
 ```shell
 conda activate MoneyPrinterTurbo
-sh webui.sh
+sh streamlit_web.sh
 ```
 
 After launching, the browser will open automatically

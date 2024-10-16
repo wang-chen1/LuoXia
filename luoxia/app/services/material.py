@@ -37,7 +37,6 @@ def search_videos_pexels(
         verify=False,
         timeout=(30, 60),
     )
-    print("res.status_code", res.status_code, res.url)
     if res.status_code != 200:
         raise Exception()
     response = res.json()

@@ -6,7 +6,7 @@
 
 <h4>Web界面</h4>
 
-![](/webui.jpg)
+![](/streamlit_web.jpg)
 
 <h4>API界面</h4>
 
@@ -128,14 +128,14 @@ sudo yum install ImageMagick
 
 ```bat
 conda activate MoneyPrinterTurbo
-webui.bat
+streamlit_web.bat
 ```
 
 ###### MacOS or Linux
 
 ```shell
 conda activate MoneyPrinterTurbo
-sh webui.sh
+sh streamlit_web.sh
 ```
 
 启动后，会自动打开浏览器
